@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AES Encryption/Decryption Visual Demo</title>
+    <style>
+      .container {
+        max-width: 600px;
+        margin: 2em auto;
+        text-align: center;
+        font-family: sans-serif;
+      }
+      input,
+      button {
+        padding: 0.5em;
+        margin: 0.5em;
+        font-size: 1em;
+      }
+      .block {
+        margin: 1em 0;
+        display: flex;
+        justify-content: center;
+      }
+      .box {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        margin: 2px;
+        border: 1px solid #ccc;
+        line-height: 40px;
+        font-size: 14px;
+        text-align: center;
+        background: #f9f9f9;
+      }
+      #encryptedResult,
+      #decryptedResult {
+        margin-top: 1em;
+        font-weight: bold;
+      }
+      h2 {
+        margin-top: 2em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>AES Encryption/Decryption Visual Demo</h1>
+
+      <!-- Encryption Section -->
+      <h2>Encryption</h2>
+      <input
+        type="text"
+        id="plaintext"
+        placeholder="Enter your message"
+        size="40"
+      />
+      <br />
+      <input
+        type="text"
+        id="encKey"
+        placeholder="Enter key (16, 24, or 32 chars)"
+        size="40"
+      />
+      <br />
+      <button onclick="startEncryption()">Encrypt</button>
+      <div id="encVisualization"></div>
+      <div id="encryptedResult"></div>
+
+      <hr />
+
+      <!-- Decryption Section -->
+      <h2>Decryption</h2>
+      <input
+        type="text"
+        id="ciphertext"
+        placeholder="Enter Base64 ciphertext"
+        size="40"
+      />
+      <br />
+      <input
+        type="text"
+        id="decKey"
+        placeholder="Enter key (16, 24, or 32 chars)"
+        size="40"
+      />
+      <br />
+      <button onclick="startDecryption()">Decrypt</button>
+      <div id="decVisualization"></div>
+      <div id="decryptedResult"></div>
+    </div>
+
+    <!-- Import your AES functions from aes.ts -->
+    <script type="module">
+      import { encryptAES, decryptAES } from "./aes.ts";
+
+      // Helper: PKCS#7 Padding for visualization (only used for displaying the encryption process)
+      function pkcs7Pad(text, blockSize = 16) {
+        const padLength = blockSize - (text.length % blockSize);
+        return text + String.fromCharCode(padLength).repeat(padLength);
+      }
+
+      function startEncryption() {
+        const msg = document.getElementById("plaintext").value;
+        const key = document.getElementById("encKey").value;
+        if (![16, 24, 32].includes(key.length)) {
+          alert("Key must be 16, 24, or 32 characters");
+          return;
+        }
+
+        // Clear previous visualization
+        const vizDiv = document.getElementById("encVisualization");
+        vizDiv.innerHTML = "<h3>Plaintext Blocks (with padding applied)</h3>";
+
+        // Pad the message and break into 16-byte blocks for visualization
+        const paddedMsg = pkcs7Pad(msg, 16);
+        for (let i = 0; i < paddedMsg.length; i += 16) {
+          const block = paddedMsg.slice(i, i + 16);
+          const blockDiv = document.createElement("div");
+          blockDiv.className = "block";
+          blockDiv.innerHTML = block
+            .split("")
+            .map((ch) => `<div class="box">${ch.charCodeAt(0)}</div>`)
+            .join("");
+          vizDiv.appendChild(blockDiv);
+        }
+
+        // Simulate encryption delay before displaying result
+        setTimeout(() => {
+          const encrypted = encryptAES(msg, key);
+          document.getElementById(
+            "encryptedResult"
+          ).innerHTML = `<h3>Encrypted Output (Base64):</h3><p>${encrypted}</p>`;
+        }, 1500);
+      }
+
+      function startDecryption() {
+        const ciphertext = document.getElementById("ciphertext").value;
+        const key = document.getElementById("decKey").value;
+        if (![16, 24, 32].includes(key.length)) {
+          alert("Key must be 16, 24, or 32 characters");
+          return;
+        }
+
+        // Clear previous visualization
+        const vizDiv = document.getElementById("decVisualization");
+        vizDiv.innerHTML = "<h3>Ciphertext Blocks (Base64 Decoded)</h3>";
+
+        // Decode Base64 ciphertext
+        const decoded = atob(ciphertext);
+        // Display each 16-character block as boxes with ASCII codes
+        for (let i = 0; i < decoded.length; i += 16) {
+          const block = decoded.slice(i, i + 16);
+          const blockDiv = document.createElement("div");
+          blockDiv.className = "block";
+          blockDiv.innerHTML = block
+            .split("")
+            .map((ch) => `<div class="box">${ch.charCodeAt(0)}</div>`)
+            .join("");
+          vizDiv.appendChild(blockDiv);
+        }
+
+        // Simulate decryption delay before showing the decrypted output
+        setTimeout(() => {
+          const decrypted = decryptAES(ciphertext, key);
+          document.getElementById(
+            "decryptedResult"
+          ).innerHTML = `<h3>Decrypted Output:</h3><p>${decrypted}</p>`;
+        }, 1500);
+      }
+
+      // Expose the functions globally for the onclick events
+      window.startEncryption = startEncryption;
+      window.startDecryption = startDecryption;
+    </script>
+  </body>
+</html>
